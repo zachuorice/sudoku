@@ -9,9 +9,11 @@
 import random
 import time
 import os
+import tkinter.tix
 from tkinter import *
 from tkinter.constants import *
 from tkinter.tix import FileSelectBox
+Tk = tkinter.tix.Tk
 
 random.seed(time.time())
 
@@ -110,13 +112,22 @@ class SudokuGUI(Frame):
     def load_game(self):
         def _load_game(filename):
             print(filename)
-        fbox = FileSelectBox(self, command=_load_game)
-        fbox.title("Load Game")
-        fbox.mainloop()
-
+            window.destroy()
+        window = Toplevel()
+        window.title("Load Game")
+        fbox = FileSelectBox(window, command=_load_game)
+        fbox.pack()
+        window.mainloop()
 
     def save_game(self):
-        pass
+        def _save_game(filename):
+            print(filename)
+            window.destroy()
+        window = Toplevel()
+        window.title("Save Game")
+        fbox = FileSelectBox(window, command=_save_game)
+        fbox.pack()
+        window.mainloop()
 
     def query_board(self):
         self.setting = False
