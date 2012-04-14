@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # Sudoku board code, and Sudoku board generation code.
 # TODO:
 # - Sudoku Solver
