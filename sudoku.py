@@ -109,12 +109,19 @@ class SudokuGUI(Frame):
         self.board_generator(self.board)
         self.sync_board_and_canvas()
 
+    def make_modal_window(self, title):
+        window = Toplevel()
+        window.title(title)
+        window.attributes('-topmost', True)
+        window.grab_set()
+        window.focus_force()
+        return window
+ 
     def load_game(self):
         def _load_game(filename):
             print(filename)
             window.destroy()
-        window = Toplevel()
-        window.title("Load Game")
+        window = self.make_modal_window("Load Game")
         fbox = FileSelectBox(window, command=_load_game)
         fbox.pack()
         window.mainloop()
@@ -123,16 +130,13 @@ class SudokuGUI(Frame):
         def _save_game(filename):
             print(filename)
             window.destroy()
-        window = Toplevel()
-        window.title("Save Game")
+        window = self.make_modal_window("Save Game")
         fbox = FileSelectBox(window, command=_save_game)
         fbox.pack()
         window.mainloop()
 
     def query_board(self):
-        self.setting = False
-        window = Toplevel()
-        window.title("Choose Board Algorithm")
+        window = self.make_modal_window("Set Board Algorithm")
 
         scroll = Scrollbar(window)
         scroll.pack(side='right', fill='y')
