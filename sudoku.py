@@ -196,8 +196,12 @@ class SudokuGUI(Frame):
         g = self.board.grid
         for y in range(9):
             for x in range(9):
-                self.canvas.itemconfig(self.handles[y][x][1], 
-                                       text=str(g[y][x]))
+                if g[y][x] != 0:
+                    self.canvas.itemconfig(self.handles[y][x][1], 
+                                           text=str(g[y][x]))
+                else:
+                    self.canvas.itemconfig(self.handles[y][x][1], 
+                                           text='')
 
     def __init__(self, master, board):
         Frame.__init__(self, master)
@@ -206,6 +210,7 @@ class SudokuGUI(Frame):
             master.title("SudokuGUI")
 
         self.board = board
+        self.board_generator(board)
 
         bframe = Frame(self)
 
