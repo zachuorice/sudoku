@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Sudoku board code, and Sudoku board generation code.
 import random
 import time
@@ -91,16 +92,19 @@ def rgb(red, green, blue):
 
 class SudokuGUI(Frame):
     board_generators = {"SudoGen v1 (Very Easy)":sudogen_1}
-    board_generator = sudogen_1
+    board_generator = staticmethod(sudogen_1)
 
     def new_game(self):
-        self.ng.pack_forget()
+        self.board.clear()
+        self.board_generator(self.board)
+        print(self.board)
+        self.sync_board_and_canvas()
 
     def load_game(self):
-        self.lg.pack_forget()
+        pass
 
     def save_game(self):
-        self.sg.pack_forget()
+        pass
 
     def query_board(self):
         self.setting = False
@@ -141,8 +145,13 @@ class SudokuGUI(Frame):
     def make_grid(self):
         c = Canvas(self, bg=rgb(255,255,255), width='512', height='512')
         c.pack(side='top', fill='both', expand='1')
-        # TODO
+
+        self.handles = [[None for x in range(9)] for y in range(9)]
+        # TODO Draw grid and text
         self.canvas = c
+
+    def sync_board_and_canvas(self):
+        pass
 
     def __init__(self, master, board):
         Frame.__init__(self, master)
@@ -155,16 +164,16 @@ class SudokuGUI(Frame):
         bframe = Frame(self)
 
         self.ng = Button(bframe, command=self.new_game, text="New Game")
-        self.ng.pack(side='left', fill='x')
+        self.ng.pack(side='left', fill='x', expand='1')
 
         self.lg = Button(bframe, command=self.load_game, text="Load Game")
-        self.lg.pack(side='left', fill='x')
+        self.lg.pack(side='left', fill='x', expand='1')
 
         self.sg = Button(bframe, command=self.save_game, text="Save Game")
-        self.sg.pack(side='left', fill='x')
+        self.sg.pack(side='left', fill='x', expand='1')
 
         self.query = Button(bframe, command=self.query_board, text="Set Board Algorithm")
-        self.query.pack(side='left', fill='x')
+        self.query.pack(side='left', fill='x', expand='1')
 
         bframe.pack(side='bottom', fill='x', expand='1')
 
