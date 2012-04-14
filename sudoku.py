@@ -4,7 +4,7 @@
 # - Sudoku Solver
 # - GUI Load/Save game
 # - GUI Board Drawing (DONE)
-# - GUI Board Sync
+# - GUI Board Sync (DONE)
 # - GUI Board Interaction
 import random
 import time
@@ -103,7 +103,6 @@ class SudokuGUI(Frame):
     def new_game(self):
         self.board.clear()
         self.board_generator(self.board)
-        print(self.board)
         self.sync_board_and_canvas()
 
     def load_game(self):
@@ -149,7 +148,7 @@ class SudokuGUI(Frame):
         window.mainloop()
 
     def make_grid(self):
-        c = Canvas(self, bg=rgb(255,255,255), width='512', height='512')
+        c = Canvas(self, bg=rgb(128,128,128), width='512', height='512')
         c.pack(side='top', fill='both', expand='1')
 
         self.handles = [[None for x in range(9)] for y in range(9)]
@@ -164,14 +163,19 @@ class SudokuGUI(Frame):
 
                 (xr, yr) = (x*rsize, y*rsize)
                 r = c.create_rectangle(xr, yr, xr+rsize, yr+rsize)
-                t = c.create_text(xr+rsize/2, yr+rsize/2, text="SUDO")
+                t = c.create_text(xr+rsize/2, yr+rsize/2, text="SUDO",
+                                  font="System 15 bold")
                 self.handles[y][x] = (r, t)
 
         self.canvas = c
         self.sync_board_and_canvas()
 
     def sync_board_and_canvas(self):
-        pass
+        g = self.board.grid
+        for y in range(9):
+            for x in range(9):
+                self.canvas.itemconfig(self.handles[y][x][1], 
+                                       text=str(g[y][x]))
 
     def __init__(self, master, board):
         Frame.__init__(self, master)
