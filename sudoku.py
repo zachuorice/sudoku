@@ -1,6 +1,8 @@
 # Sudoku board code, and Sudoku board generation code.
 import random
 import time
+from tkinter import *
+from tkinter.constants import *
 
 random.seed(time.time())
 
@@ -84,14 +86,94 @@ def sudogen_1(board):
                 print("Board rule violation, this shouldn't happen!")
             added.append(i)
 
+def rgb(red, green, blue):
+    return "#%02x%02x%02x" % (red, green, blue)
+
+class SudokuGUI(Frame):
+    board_generators = {"SudoGen v1 (Very Easy)":sudogen_1}
+    board_generator = sudogen_1
+
+    def new_game(self):
+        self.ng.pack_forget()
+
+    def load_game(self):
+        self.lg.pack_forget()
+
+    def save_game(self):
+        self.sg.pack_forget()
+
+    def query_board(self):
+        self.setting = False
+        window = Toplevel()
+        window.title("Choose Board Algorithm")
+
+        scroll = Scrollbar(window)
+        scroll.pack(side='right', fill='y')
+
+        listbox = Listbox(window, yscrollcommand=scroll.set) 
+
+        scroll.config(command=listbox.yview)
+
+        bframe = Frame(window)
+
+        for s in self.board_generators.keys():
+            listbox.insert(-1, s)
+
+        def do_ok():
+            self.board_generator = self.board_generators[listbox.get(ACTIVE)]
+            window.destroy()
+
+        def do_cancel():
+            window.destroy()
+
+
+        cancel = Button(bframe, command=do_cancel, text="Cancel")
+        cancel.pack(side='right', fill='x')
+
+        ok = Button(bframe, command=do_ok, text="Ok")
+        ok.pack(side='right', fill='x')
+
+        listbox.pack(side='top', fill='both', expand='1')
+        bframe.pack(side='top', fill='x', expand='1')
+
+        window.mainloop()
+
+    def make_grid(self):
+        c = Canvas(self, bg=rgb(255,255,255), width='512', height='512')
+        c.pack(side='top', fill='both', expand='1')
+        # TODO
+        self.canvas = c
+
+    def __init__(self, master, board):
+        Frame.__init__(self, master)
+
+        if master:
+            master.title("SudokuGUI")
+
+        self.board = board
+
+        bframe = Frame(self)
+
+        self.ng = Button(bframe, command=self.new_game, text="New Game")
+        self.ng.pack(side='left', fill='x')
+
+        self.lg = Button(bframe, command=self.load_game, text="Load Game")
+        self.lg.pack(side='left', fill='x')
+
+        self.sg = Button(bframe, command=self.save_game, text="Save Game")
+        self.sg.pack(side='left', fill='x')
+
+        self.query = Button(bframe, command=self.query_board, text="Set Board Algorithm")
+        self.query.pack(side='left', fill='x')
+
+        bframe.pack(side='bottom', fill='x', expand='1')
+
+        self.make_grid()
+
+        self.pack()
+
 if __name__ == '__main__':
-    def wrapped_print(*args, **kwargs):
-        print("-----------------------")
-        print(*args, **kwargs)
-        print("-----------------------")
-
     board = SudokuBoard()
-    wrapped_print(board)
-
-    sudogen_1(board)
-    wrapped_print(board)
+    tk = Tk()
+    gui = SudokuGUI(tk, board)
+    gui.mainloop()
