@@ -8,8 +8,10 @@
 # - GUI Board Interaction
 import random
 import time
+import os
 from tkinter import *
 from tkinter.constants import *
+from tkinter.tix import FileSelectBox
 
 random.seed(time.time())
 
@@ -106,7 +108,12 @@ class SudokuGUI(Frame):
         self.sync_board_and_canvas()
 
     def load_game(self):
-        pass
+        def _load_game(filename):
+            print(filename)
+        fbox = FileSelectBox(self, command=_load_game)
+        fbox.title("Load Game")
+        fbox.mainloop()
+
 
     def save_game(self):
         pass
