@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 # Sudoku board code, and Sudoku board generation code.
+# TODO:
+# - Sudoku Solver
+# - GUI Load/Save game
+# - GUI Board Drawing (DONE)
+# - GUI Board Sync
+# - GUI Board Interaction
 import random
 import time
 from tkinter import *
@@ -147,8 +153,22 @@ class SudokuGUI(Frame):
         c.pack(side='top', fill='both', expand='1')
 
         self.handles = [[None for x in range(9)] for y in range(9)]
-        # TODO Draw grid and text
+        rsize = 512/9
+        guidesize = 512/3
+
+        for y in range(9):
+            for x in range(9):
+                (xr, yr) = (x*guidesize, y*guidesize)
+                c.create_rectangle(xr, yr, xr+guidesize, yr+guidesize, 
+                                   width=3)
+
+                (xr, yr) = (x*rsize, y*rsize)
+                r = c.create_rectangle(xr, yr, xr+rsize, yr+rsize)
+                t = c.create_text(xr+rsize/2, yr+rsize/2, text="SUDO")
+                self.handles[y][x] = (r, t)
+
         self.canvas = c
+        self.sync_board_and_canvas()
 
     def sync_board_and_canvas(self):
         pass
