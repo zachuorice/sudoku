@@ -126,11 +126,11 @@ class SudokuGUI(Frame):
     def load_game(self):
         def _load_game(filename):
             with open(filename, 'rb') as f:
-                try:
-                    self.board = pickle.load(f)
-                except:
-                    # TODO
-                    pass
+                board = pickle.load(f)
+                if not isinstance(board, SudokuBoard):
+                    # TODO: Report bad file
+                    return
+                self.board = board
             self.sync_board_and_canvas()
             window.destroy()
         window = self.make_modal_window("Load Game")
@@ -141,7 +141,6 @@ class SudokuGUI(Frame):
     def save_game(self):
         def _save_game(filename):
             with open(filename, 'wb') as f:
-                # Could this be exploited?
                 pickle.dump(self.board, f, protocol=2)
             window.destroy()
         window = self.make_modal_window("Save Game")
