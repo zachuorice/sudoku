@@ -254,7 +254,9 @@ class SudokuGUI(Frame):
                 self.board.set(x, y, int(event.char))
                 self.sync_board_and_canvas()
             except ValueError:
-                # TODO
+                # TODO: I'd rather set the erroneous value anyway and simply
+                #       not consider it valid, and perhaps set the text color
+                #       to red.
                 pass
 
     def __init__(self, master, board):
