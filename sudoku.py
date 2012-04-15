@@ -2,22 +2,25 @@
 # Sudoku board code, and Sudoku board generation code.
 # TODO:
 # - Sudoku Solver
-# - GUI Load/Save game
+# - GUI Load/Save game (DONE)
 # - GUI Board Drawing (DONE)
 # - GUI Board Sync (DONE)
-# - GUI Board Interaction
+# - GUI Board Interaction (DONE)
+# - GUI End Game Mode
 import random
 import time
 import os
 import tkinter.tix
+import pickle
 from tkinter import *
 from tkinter.constants import *
-from tkinter.tix import FileSelectBox
-Tk = tkinter.tix.Tk
+from tkinter.tix import FileSelectBox, Tk
 
 random.seed(time.time())
 
 
+# There are probably a few bugs in this class, and it could be implemented 
+# better I think.
 class SudokuBoard:
 
 
@@ -26,6 +29,7 @@ class SudokuBoard:
 
     def clear(self):
         self.grid = [[0 for x in range(9)] for y in range(9)]
+        self.locked = []
 
     def get_row(self, row):
         return self.grid[row]
@@ -47,8 +51,8 @@ class SudokuBoard:
         return [y[make_index(col):make_index(col)+3] for y in 
                 self.grid[make_index(row):make_index(row)+3]]
 
-    def set(self, col, row, v):
-        if v == self.grid[row][col]:
+    def set(self, col, row, v, lock=False):
+        if v == self.grid[row][col] or (col, row) in self.locked:
             return
         for v2 in self.get_row(row):
             if v == v2:
@@ -61,6 +65,8 @@ class SudokuBoard:
                 if v == x:
                     raise ValueError()
         self.grid[row][col] = v
+        if lock:
+            self.locked.append((col, row))
 
     def get(self, col, row):
         return self.grid[row][col]
@@ -92,7 +98,7 @@ def sudogen_1(board):
             while i in added:
                 i = random.randint(1, 9)
             try:
-                board.set(random.randint(x, x+2), random.randint(y, y+2), i)
+                board.set(random.randint(x, x+2), random.randint(y, y+2), i, lock=True)
             except ValueError:
                 print("Board rule violation, this shouldn't happen!")
             added.append(i)
@@ -119,7 +125,13 @@ class SudokuGUI(Frame):
  
     def load_game(self):
         def _load_game(filename):
-            print(filename)
+            with open(filename, 'rb') as f:
+                try:
+                    self.board = pickle.load(f)
+                except:
+                    # TODO
+                    pass
+            self.sync_board_and_canvas()
             window.destroy()
         window = self.make_modal_window("Load Game")
         fbox = FileSelectBox(window, command=_load_game)
@@ -128,7 +140,9 @@ class SudokuGUI(Frame):
 
     def save_game(self):
         def _save_game(filename):
-            print(filename)
+            with open(filename, 'wb') as f:
+                # Could this be exploited?
+                pickle.dump(self.board, f, protocol=2)
             window.destroy()
         window = self.make_modal_window("Save Game")
         fbox = FileSelectBox(window, command=_save_game)
@@ -173,6 +187,7 @@ class SudokuGUI(Frame):
         c = Canvas(self, bg=rgb(128,128,128), width='512', height='512')
         c.pack(side='top', fill='both', expand='1')
 
+        self.rects = [[None for x in range(9)] for y in range(9)]
         self.handles = [[None for x in range(9)] for y in range(9)]
         rsize = 512/9
         guidesize = 512/3
@@ -180,9 +195,8 @@ class SudokuGUI(Frame):
         for y in range(9):
             for x in range(9):
                 (xr, yr) = (x*guidesize, y*guidesize)
-                c.create_rectangle(xr, yr, xr+guidesize, yr+guidesize, 
-                                   width=3)
-
+                self.rects[y][x] = c.create_rectangle(xr, yr, xr+guidesize, 
+                                                      yr+guidesize, width=3)
                 (xr, yr) = (x*rsize, y*rsize)
                 r = c.create_rectangle(xr, yr, xr+rsize, yr+rsize)
                 t = c.create_text(xr+rsize/2, yr+rsize/2, text="SUDO",
@@ -203,6 +217,37 @@ class SudokuGUI(Frame):
                     self.canvas.itemconfig(self.handles[y][x][1], 
                                            text='')
 
+    def canvas_click(self, event):
+        print("Click! (%d,%d)" % (event.x, event.y))
+        self.canvas.focus_set()
+        rsize = 512/9
+        (x,y) = (0, 0)
+        if event.x > rsize:
+            x = int(event.x/rsize)
+        if event.y > rsize:
+            y = int(event.y/rsize)
+        print(x,y)
+        if self.current:
+            (tx, ty) = self.current
+            #self.canvas.itemconfig(self.handles[ty][tx][0], fill=rgb(128,128,128))
+        self.current = (x,y)
+
+        # BUG: Changing the color of the background of a tile erases parts of
+        #      the thick gridlines
+        #self.canvas.itemconfig(self.handles[y][x][0], fill=rgb(255,255,255))
+
+    def canvas_key(self, event):
+        print("Clack! (%s)" % (event.char))
+        if event.char.isdigit() and int(event.char) > 0 and self.current:
+            (x,y) = self.current
+            #self.canvas.itemconfig(self.handles[y][x][0], fill=rgb(128,128,128))
+            try:
+                self.board.set(x, y, int(event.char))
+                self.sync_board_and_canvas()
+            except ValueError:
+                # TODO
+                pass
+
     def __init__(self, master, board):
         Frame.__init__(self, master)
 
@@ -211,25 +256,25 @@ class SudokuGUI(Frame):
 
         self.board = board
         self.board_generator(board)
-
         bframe = Frame(self)
 
         self.ng = Button(bframe, command=self.new_game, text="New Game")
         self.ng.pack(side='left', fill='x', expand='1')
 
-        self.lg = Button(bframe, command=self.load_game, text="Load Game")
-        self.lg.pack(side='left', fill='x', expand='1')
-
         self.sg = Button(bframe, command=self.save_game, text="Save Game")
         self.sg.pack(side='left', fill='x', expand='1')
+
+        self.lg = Button(bframe, command=self.load_game, text="Load Game")
+        self.lg.pack(side='left', fill='x', expand='1')
 
         self.query = Button(bframe, command=self.query_board, text="Set Board Algorithm")
         self.query.pack(side='left', fill='x', expand='1')
 
         bframe.pack(side='bottom', fill='x', expand='1')
-
         self.make_grid()
-
+        self.canvas.bind("<Button-1>", self.canvas_click)
+        self.canvas.bind("<Key>", self.canvas_key)
+        self.current = None
         self.pack()
 
 if __name__ == '__main__':
