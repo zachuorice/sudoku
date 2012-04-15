@@ -22,11 +22,24 @@ random.seed(time.time())
 
 # There are probably a few bugs in this class, and it could be implemented 
 # better I think.
-class SudokuBoard:
+# ReDesign Stuff:
+# Don't integrate game rule error checks in set(), instead create valid()
+# and is_game_complete() functions to handle this, but allow users to mess
+# up the board however they like.
+
+class Board:
     """
     Data structure representing the board of a Sudoku game.
     """
 
+
+    @property
+    def grid(self):
+        grid = [[0 for x in range(9)] for y in range(9)]
+        for y in range(9):
+            for x in range(9):
+                grid[y][x] = self.get(x, y)
+        return grid
 
     def __init__(self):
         self.clear()
@@ -35,59 +48,59 @@ class SudokuBoard:
         """
         Empty the board.
         """
-        self.grid = [[0 for x in range(9)] for y in range(9)]
+        self.board = [0 for i in range(9*9)]
         self.locked = []
 
-    def get_row(self, row):
-        return self.grid[row]
+    def is_valid(self, col, row):
+        return False
 
-    def get_cols(self, col):
-        return [y[col] for y in self.grid]
+    def valid(self):
+        return False
 
-    def get_nearest_region(self, col, row):
-        """
-        Regions are 3x3 sections of the grid.
-        """
-        def make_index(v):
-            if v <= 2:
-                return 0
-            elif v <= 5:
-                return 3
-            else:
-                return 6
-        return [y[make_index(col):make_index(col)+3] for y in 
-                self.grid[make_index(row):make_index(row)+3]]
+    def is_game_over(self):
+        return False
+
+    def col_row_to_index(self, col, row):
+        if col < 0 or col >= 9 or row < 0 or row >= 9:
+            raise IndexError("Column or row out of bounds.")
+        i = (row*9) + col
+        return i
 
     def set(self, col, row, v, lock=False):
-        if v == self.grid[row][col] or (col, row) in self.locked:
+        if v < 1 or v > 9:
+            raise ValueError("Value must be within range 1-9.")
+        i = self.col_row_to_index(col, row)
+
+        if i in self.locked:
             return
-        for v2 in self.get_row(row):
-            if v == v2:
-                raise ValueError()
-        for v2 in self.get_cols(col):
-            if v == v2:
-                raise ValueError()
-        for y in self.get_nearest_region(col, row):
-            for x in y:
-                if v == x:
-                    raise ValueError()
-        self.grid[row][col] = v
+        else:
+            self.board[i] = v
+
         if lock:
-            self.locked.append((col, row))
+            self.locked.append(i)
+
+    def get_row(self, row):
+        i = self.col_row_to_index(0, row)
+        return self.board[i:i+9]
+
+    def get_cols(self, col):
+        cols = []
+        for row in range(9):
+            i = self.col_row_to_index(col, row)
+            cols.append(self.board[i])
+        return cols
+
+    def get_region(self, region):
+        """
+        region is a number between 0-8 with 0 being top-leftmost 
+        region and 8 being the bottom-rightmost region.
+        """
+        (row,col) = (0,0)
+        # TODO
+        print(col,row)
 
     def get(self, col, row):
-        return self.grid[row][col]
-
-    def __str__(self):
-        strings = []
-        newline_counter = 0
-        for y in self.grid:
-                strings.append("%d%d%d %d%d%d %d%d%d" % tuple(y))
-                newline_counter += 1
-                if newline_counter == 3:
-                    strings.append('')
-                    newline_counter = 0
-        return '\n'.join(strings)
+        return self.board[self.col_row_to_index(col, row)]
 
 def sudogen_1(board):
     """
@@ -116,7 +129,7 @@ def rgb(red, green, blue):
     """
     return "#%02x%02x%02x" % (red, green, blue)
 
-class SudokuGUI(Frame):
+class GUI(Frame):
     board_generators = {"SudoGen v1 (Very Easy)":sudogen_1}
     board_generator = staticmethod(sudogen_1)
 
@@ -227,7 +240,6 @@ class SudokuGUI(Frame):
                                            text='')
 
     def canvas_click(self, event):
-        print("Click! (%d,%d)" % (event.x, event.y))
         self.canvas.focus_set()
         rsize = 512/9
         (x,y) = (0, 0)
@@ -235,21 +247,11 @@ class SudokuGUI(Frame):
             x = int(event.x/rsize)
         if event.y > rsize:
             y = int(event.y/rsize)
-        print(x,y)
-        if self.current:
-            (tx, ty) = self.current
-            #self.canvas.itemconfig(self.handles[ty][tx][0], fill=rgb(128,128,128))
         self.current = (x,y)
 
-        # BUG: Changing the color of the background of a tile erases parts of
-        #      the thick gridlines
-        #self.canvas.itemconfig(self.handles[y][x][0], fill=rgb(255,255,255))
-
     def canvas_key(self, event):
-        print("Clack! (%s)" % (event.char))
         if event.char.isdigit() and int(event.char) > 0 and self.current:
             (x,y) = self.current
-            #self.canvas.itemconfig(self.handles[y][x][0], fill=rgb(128,128,128))
             try:
                 self.board.set(x, y, int(event.char))
                 self.sync_board_and_canvas()
@@ -289,7 +291,7 @@ class SudokuGUI(Frame):
         self.pack()
 
 if __name__ == '__main__':
-    board = SudokuBoard()
+    board = Board()
     tk = Tk()
-    gui = SudokuGUI(tk, board)
+    gui = GUI(tk, board)
     gui.mainloop()
