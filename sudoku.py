@@ -7,6 +7,7 @@
 # - GUI Board Sync (DONE)
 # - GUI Board Interaction (DONE)
 # - GUI End Game Mode
+# - Reimplment SudokuBoard more efficently and with less complexity
 import random
 import time
 import os
@@ -22,12 +23,18 @@ random.seed(time.time())
 # There are probably a few bugs in this class, and it could be implemented 
 # better I think.
 class SudokuBoard:
+    """
+    Data structure representing the board of a Sudoku game.
+    """
 
 
     def __init__(self):
         self.clear()
 
     def clear(self):
+        """
+        Empty the board.
+        """
         self.grid = [[0 for x in range(9)] for y in range(9)]
         self.locked = []
 
@@ -39,7 +46,7 @@ class SudokuBoard:
 
     def get_nearest_region(self, col, row):
         """
-        Regions are 3x3 sections of the grid
+        Regions are 3x3 sections of the grid.
         """
         def make_index(v):
             if v <= 2:
@@ -104,6 +111,9 @@ def sudogen_1(board):
             added.append(i)
 
 def rgb(red, green, blue):
+    """
+    Make a tkinter compatible RGB color.
+    """
     return "#%02x%02x%02x" % (red, green, blue)
 
 class SudokuGUI(Frame):
