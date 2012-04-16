@@ -20,13 +20,6 @@ from tkinter.tix import FileSelectBox, Tk
 random.seed(time.time())
 
 
-# There are probably a few bugs in this class, and it could be implemented 
-# better I think.
-# ReDesign Stuff:
-# Don't integrate game rule error checks in set(), instead create valid()
-# and is_game_complete() functions to handle this, but allow users to mess
-# up the board however they like.
-
 class Board:
     """
     Data structure representing the board of a Sudoku game.
@@ -57,6 +50,7 @@ class Board:
         cols = self.get_cols(col)
         row_list = self.get_row(row)
         if cols.count(v) > 1 or row_list.count(v) > 1 or region.count(v) > 1:
+            # Inefficient ^^^^
             return False
         return True
 
@@ -139,19 +133,17 @@ def sudogen_1(board):
         board, do not add duplicate random numbers.
     """
     board.clear()
-    added = [0]
+    values = list(range(1, 9))
+    random.shuffle(values)
     for y in range(0, 9, 3):
         for x in range(0, 9, 3):
-            if len(added) == 10:
+            if len(values) == 0:
                 return
-            i = 0
-            while i in added:
-                i = random.randint(1, 9)
-            try:
-                board.set(random.randint(x, x+2), random.randint(y, y+2), i, lock=True)
-            except ValueError:
-                print("Board rule violation, this shouldn't happen!")
-            added.append(i)
+            i = values.pop()
+            (rx, ry) = (random.randint(x, x+2), random.randint(y, y+2))
+            board.set(rx, ry, i, lock=True)
+            if not board.is_valid(rx, ry):
+                print("Strange, %d at (%d,%d) should be valid." % (i, rx, ry))
 
 def rgb(red, green, blue):
     """
