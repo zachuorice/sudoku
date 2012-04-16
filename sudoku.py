@@ -33,13 +33,13 @@ class Board:
     """
 
 
-    @property
-    def grid(self):
-        grid = [[0 for x in range(9)] for y in range(9)]
-        for y in range(9):
-            for x in range(9):
-                grid[y][x] = self.get(x, y)
-        return grid
+    #@property
+    #def grid(self):
+    #    grid = [[0 for x in range(9)] for y in range(9)]
+    #    for y in range(9):
+    #        for x in range(9):
+    #            grid[y][x] = self.get(x, y)
+    #    return grid
 
     def __init__(self):
         self.clear()
@@ -67,7 +67,7 @@ class Board:
         return i
 
     def set(self, col, row, v, lock=False):
-        if v < 1 or v > 9:
+        if v < 0 or v > 9:
             raise ValueError("Value must be within range 1-9.")
         i = self.col_row_to_index(col, row)
 
@@ -95,9 +95,19 @@ class Board:
         region is a number between 0-8 with 0 being top-leftmost 
         region and 8 being the bottom-rightmost region.
         """
+        if region < 0 or region > 8:
+            raise IndexError("region out of bounds")
         (row,col) = (0,0)
-        # TODO
-        print(col,row)
+        if region <= 2:
+            col = region * 3
+        else:
+            row = (region // 3) * 3
+            col = (region % 3) * 3
+        region = []
+        for y in range(row, row+3):
+            for x in range(col, col+3):
+                region.append(self.get(x, y))
+        return region
 
     def get(self, col, row):
         return self.board[self.col_row_to_index(col, row)]
@@ -229,24 +239,22 @@ class GUI(Frame):
         self.sync_board_and_canvas()
 
     def sync_board_and_canvas(self):
-        g = self.board.grid
         for y in range(9):
             for x in range(9):
-                if g[y][x] != 0:
-                    self.canvas.itemconfig(self.handles[y][x][1], 
-                                           text=str(g[y][x]))
-                else:
-                    self.canvas.itemconfig(self.handles[y][x][1], 
-                                           text='')
+                text = ''
+                i = self.board.get(x, y)
+                if i != 0:
+                    text=str(i)
+                self.canvas.itemconfig(self.handles[y][x][1], text=text)
 
     def canvas_click(self, event):
         self.canvas.focus_set()
-        rsize = 512/9
+        rsize = 512 // 9
         (x,y) = (0, 0)
         if event.x > rsize:
-            x = int(event.x/rsize)
+            x = event.x // rsize
         if event.y > rsize:
-            y = int(event.y/rsize)
+            y = event.y // rsize
         self.current = (x,y)
 
     def canvas_key(self, event):
@@ -260,6 +268,7 @@ class GUI(Frame):
                 #       not consider it valid, and perhaps set the text color
                 #       to red.
                 pass
+            self.current = None
 
     def __init__(self, master, board):
         Frame.__init__(self, master)
