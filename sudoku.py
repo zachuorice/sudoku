@@ -52,12 +52,20 @@ class Board:
         self.locked = []
 
     def is_valid(self, col, row):
-        return False
+        v = self.get(col, row)
+        region = self.get_nearest_region(col, row)
+        cols = self.get_cols(col)
+        row_list = self.get_row(row)
+        if cols.count(v) > 1 or row_list.count(v) > 1 or region.count(v) > 1:
+            return False
+        return True
 
     def valid(self):
         return False
 
     def is_game_over(self):
+        if self.valid() and not 0 in self.board:
+            return True
         return False
 
     def col_row_to_index(self, col, row):
@@ -89,6 +97,18 @@ class Board:
             i = self.col_row_to_index(col, row)
             cols.append(self.board[i])
         return cols
+
+    def get_nearest_region(self, col, row):
+        if row < 3:
+            row = 0
+        else:
+            row = (row - (row%3))
+
+        if col < 3:
+            col = 0
+        else:
+            col = (col - (col%3)) // 3
+        return self.get_region(row+col)
 
     def get_region(self, region):
         """
@@ -140,7 +160,8 @@ def rgb(red, green, blue):
     return "#%02x%02x%02x" % (red, green, blue)
 
 class GUI(Frame):
-    board_generators = {"SudoGen v1 (Very Easy)":sudogen_1}
+    board_generators = {"Empty":lambda b:None,
+                        "SudoGen v1 (Very Easy)":sudogen_1}
     board_generator = staticmethod(sudogen_1)
 
     def new_game(self):
@@ -242,10 +263,13 @@ class GUI(Frame):
         for y in range(9):
             for x in range(9):
                 text = ''
+                color = rgb(0,0,0)
                 i = self.board.get(x, y)
                 if i != 0:
                     text=str(i)
-                self.canvas.itemconfig(self.handles[y][x][1], text=text)
+                if not self.board.is_valid(x,y):
+                    color = rgb(128,0,0)
+                self.canvas.itemconfig(self.handles[y][x][1], text=text, fill=color)
 
     def canvas_click(self, event):
         self.canvas.focus_set()
@@ -260,14 +284,8 @@ class GUI(Frame):
     def canvas_key(self, event):
         if event.char.isdigit() and int(event.char) > 0 and self.current:
             (x,y) = self.current
-            try:
-                self.board.set(x, y, int(event.char))
-                self.sync_board_and_canvas()
-            except ValueError:
-                # TODO: I'd rather set the erroneous value anyway and simply
-                #       not consider it valid, and perhaps set the text color
-                #       to red.
-                pass
+            self.board.set(x, y, int(event.char))
+            self.sync_board_and_canvas()
             self.current = None
 
     def __init__(self, master, board):
