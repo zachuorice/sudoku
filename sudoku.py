@@ -1,13 +1,29 @@
 #!/usr/bin/python
+# Copyright 2012 Zachary Richey <zr.public@gmail.com>
+#
+# This code is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This code is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this code. If not, see <http://www.gnu.org/licenses/>.
+
 # Sudoku board code, and Sudoku board generation code.
+
 # TODO:
 # - Sudoku Solver
 # - GUI Load/Save game (DONE)
 # - GUI Board Drawing (DONE)
 # - GUI Board Sync (DONE)
 # - GUI Board Interaction (DONE)
-# - GUI End Game Mode
-# - Reimplment SudokuBoard more efficently and with less complexity
+# - GUI End Game Mode (DONE)
+# - Reimplment SudokuBoard more efficently and with less complexity (DONE)
 import random
 import time
 import os
@@ -16,6 +32,7 @@ import pickle
 from tkinter import *
 from tkinter.constants import *
 from tkinter.tix import FileSelectBox, Tk
+from tkinter.messagebox import askyesno
 
 random.seed(time.time())
 
@@ -55,7 +72,11 @@ class Board:
         return True
 
     def valid(self):
-        return False
+        for y in range(9):
+            for x in range(9):
+                # Very inefficient, but easy to code :D
+                if not self.is_valid(x, y):
+                    return False
 
     def is_game_over(self):
         if self.valid() and not 0 in self.board:
@@ -173,7 +194,7 @@ class GUI(Frame):
         def _load_game(filename):
             with open(filename, 'rb') as f:
                 board = pickle.load(f)
-                if not isinstance(board, SudokuBoard):
+                if not isinstance(board, Board):
                     # TODO: Report bad file
                     return
                 self.board = board
@@ -261,9 +282,16 @@ class GUI(Frame):
                     text=str(i)
                 if not self.board.is_valid(x,y):
                     color = rgb(128,0,0)
+                if self.board.is_game_over():
+                    color = rgb(0,128,0)
                 self.canvas.itemconfig(self.handles[y][x][1], text=text, fill=color)
 
     def canvas_click(self, event):
+        if self.board.is_game_over():
+            msg = "You completed the board! Do you want to start a new game?"
+            if askyesno("Start New Game?", msg):
+                self.new_game()
+
         self.canvas.focus_set()
         rsize = 512 // 9
         (x,y) = (0, 0)
@@ -274,7 +302,7 @@ class GUI(Frame):
         self.current = (x,y)
 
     def canvas_key(self, event):
-        if event.char.isdigit() and int(event.char) > 0 and self.current:
+        if event.char.isdigit() and int(event.char) >= 0 and self.current:
             (x,y) = self.current
             self.board.set(x, y, int(event.char))
             self.sync_board_and_canvas()
