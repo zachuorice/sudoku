@@ -91,7 +91,7 @@ class Board:
 
     def set(self, col, row, v, lock=False):
         if v < 0 or v > 9:
-            raise ValueError("Value must be within range 1-9.")
+            raise ValueError("Value must be within range 0-9.")
         i = self.col_row_to_index(col, row)
 
         if i in self.locked:
@@ -173,6 +173,7 @@ def rgb(red, green, blue):
     return "#%02x%02x%02x" % (red, green, blue)
 
 class GUI(Frame):
+    asked = False
     board_generators = {"Empty":lambda b:None,
                         "SudoGen v1 (Very Easy)":sudogen_1}
     board_generator = staticmethod(sudogen_1)
@@ -181,6 +182,7 @@ class GUI(Frame):
         self.board.clear()
         self.board_generator(self.board)
         self.sync_board_and_canvas()
+        self.asked = False
 
     def make_modal_window(self, title):
         window = Toplevel()
@@ -285,13 +287,27 @@ class GUI(Frame):
                 if self.board.is_game_over():
                     color = rgb(0,128,0)
                 self.canvas.itemconfig(self.handles[y][x][1], text=text, fill=color)
-
-    def canvas_click(self, event):
+                
+    def check_game_over(self):
+        """
+        If the game is over and the user hasn't
+        been asked if he would like to start a new
+        game we do so here.
+        """
         if self.board.is_game_over():
             msg = "You completed the board! Do you want to start a new game?"
-            if askyesno("Start New Game?", msg):
+            # The 'askyesno' is only evaluated if 'not self.asked' evaluates
+            # to True.
+            if not self.asked and askyesno("Start New Game?", msg):
                 self.new_game()
+                self.asked = False
+            else:
+                self.asked = True
+            return True
+        return False
 
+    def canvas_click(self, event):
+        self.check_game_over()
         self.canvas.focus_set()
         rsize = 512 // 9
         (x,y) = (0, 0)
@@ -307,6 +323,7 @@ class GUI(Frame):
             self.board.set(x, y, int(event.char))
             self.sync_board_and_canvas()
             self.current = None
+        self.check_game_over()
 
     def __init__(self, master, board):
         Frame.__init__(self, master)
