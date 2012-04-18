@@ -307,7 +307,8 @@ class GUI(Frame):
         return False
 
     def canvas_click(self, event):
-        self.check_game_over()
+        if self.check_game_over():
+            return
         self.canvas.focus_set()
         rsize = 512 // 9
         (x,y) = (0, 0)
